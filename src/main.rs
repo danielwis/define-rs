@@ -1,5 +1,4 @@
 use regex::Regex;
-use reqwest;
 use serde::Deserialize;
 use std::fmt;
 
@@ -43,7 +42,7 @@ impl fmt::Display for Meaning {
         for (idx, def) in self.definitions.iter().enumerate() {
             writeln!(f, "{}. {}", idx + 1, def.definition)?;
             if let Some(xmpl) = def.example.clone() {
-                writeln!(f, "   \x1b[;3m\"{}\"\x1b[0m", xmpl)?;
+                writeln!(f, "   \x1b[;3m\"{xmpl}\"\x1b[0m")?;
             }
         }
         Ok(())
@@ -58,13 +57,10 @@ impl fmt::Display for DictionaryEntry {
         let ansi_regex = Regex::new(r#"\x1b\[.*?m"#).unwrap();
         let mut final_string = String::new();
         final_string.push_str(&format!("{main_word_col}{}{reset}", self.word));
-        if self.phonetic.is_some() {
-            final_string.push_str(&format!(
-                "{phonetics_col}[\"{}\"]{reset}",
-                self.phonetic.clone().unwrap()
-            ));
+        if let Some(p) = &self.phonetic {
+            final_string.push_str(&format!("{phonetics_col}[\"{p}\"]{reset}"));
         }
-        writeln!(f, "{}", final_string)?;
+        writeln!(f, "{final_string}")?;
 
         // .chars().count() != len(), as the latter counts unicode modifyers as own
         // characters even if they display as one
@@ -73,7 +69,7 @@ impl fmt::Display for DictionaryEntry {
         writeln!(f, "{separator}")?;
 
         for meaning in &self.meanings {
-            write!(f, "{}", meaning)?;
+            write!(f, "{meaning}")?;
             writeln!(f, "{separator}")?;
         }
         write!(f, "")
@@ -88,7 +84,7 @@ async fn main() {
 
     let entries = resp_obj.json::<Vec<DictionaryEntry>>().await.unwrap();
 
-    for entry in entries.iter() {
-        println!("{}", entry);
+    for entry in &entries {
+        println!("{entry}");
     }
 }
